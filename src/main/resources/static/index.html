@@ -2,9 +2,199 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
-</head>
-<body>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Overengineered Clock</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+        rel="stylesheet">
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      transition: background-color 0.5s, color 0.5s;
+    }
 
+    .light-mode {
+      color: #ffffff;
+    }
+
+    .dark-mode {
+      background-color: #121212;
+      color: #aaa;
+    }
+
+    .animated-background {
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 300% 300%;
+      animation: gradientBG 30s ease infinite;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 1;
+    }
+
+    .dark-mode .animated-background {
+      opacity: 0;
+    }
+
+    @keyframes gradientBG {
+      0% {
+        background-position: 0 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0 50%;
+      }
+    }
+
+    #clock {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      padding: 20px 40px;
+      border-radius: 20px;
+    }
+
+    #date {
+      font-size: 44px;
+    }
+
+    #time {
+      font-size: 120px;
+      font-weight: bold;
+    }
+
+    .theme-switch-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .sun-icon, .moon-icon {
+      font-size: 18px;
+      margin: 0 10px;
+    }
+
+    .theme-switch {
+      display: inline-block;
+      height: 22px;
+      position: relative;
+      width: 40px;
+    }
+
+    .theme-switch input[type="checkbox"] {
+      display: none;
+    }
+
+    .slider {
+      background-color: #ccc;
+      bottom: 0;
+      cursor: pointer;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transition: .4s;
+    }
+
+    .slider:before {
+      background-color: #fff;
+      bottom: 3px;
+      content: "";
+      height: 16px;
+      left: 3px;
+      position: absolute;
+      transition: .4s;
+      width: 16px;
+    }
+
+    input:checked + .slider {
+      background-color: #66bb6a;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .slider.round {
+      border-radius: 34px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
+    }
+
+    .signature {
+      position: fixed;
+      bottom: 5px;
+      right: 10px;
+      color: #FFF;
+      font-size: 10px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body class="light-mode">
+<div class="animated-background"></div>
+<div id="clock">
+  <div id="date">Loading date...</div>
+  <div id="time">Loading time...</div>
+</div>
+<div class="theme-switch-wrapper">
+  <div class="sun-icon">&#x2600;</div> <!-- Ícone do Sol -->
+  <label class="theme-switch">
+    <input type="checkbox" id="theme-switch-checkbox">
+    <div class="slider round"></div>
+  </label>
+  <div class="moon-icon">&#x1F319;</div> <!-- Ícone da Lua -->
+</div>
+<div class="signature">vlaskz 2024 (c)</div>
+
+<script>
+  const checkbox = document.getElementById('theme-switch-checkbox');
+  checkbox.addEventListener('change', function () {
+    if (this.checked) {
+      document.body.classList.replace('light-mode', 'dark-mode');
+    } else {
+      document.body.classList.replace('dark-mode', 'light-mode');
+    }
+  });
+
+  function initializeClock() {
+    const storedTime = JSON.parse(localStorage.getItem('serverTime'));
+    if (storedTime) {
+      document.getElementById("date").textContent = storedTime.date;
+      document.getElementById("time").textContent = storedTime.time;
+    }
+  }
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const eventSource = new EventSource(`/date-time?timeZone=${encodeURIComponent(timeZone)}`);
+
+  eventSource.onmessage = function (event) {
+    const [time, date] = event.data.split(' ');
+    localStorage.setItem('serverTime', JSON.stringify({date, time}));
+    initializeClock();
+  };
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'serverTime') {
+      initializeClock();
+    }
+  });
+
+  initializeClock();
+</script>
 </body>
 </html>
